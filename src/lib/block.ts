@@ -1,4 +1,5 @@
 import { SHA256 } from "crypto-js";
+import Validation from "./validation";
 /**
  * Block class
  */
@@ -40,13 +41,13 @@ export default class Block {
      * 
      * @returns Returns TRUE if the block is valid
      */
-    isValid(previousIndex: number, previousHash: string): boolean {
-        if (previousIndex !== this.index-1) { return false; }
-        if (this.timestamp < 1) { return false; }
-        if (this.previousHash !== previousHash) { return false; }
-        if (!this.data) { return false; }
-        if (!this.hash) { return false; }
-        //if (this.hash !== this.generateHash()) { return false; }
-        return true;
+    isValid(previousIndex: number, previousHash: string): Validation {
+        if (previousIndex !== this.index-1) return new Validation(false, "Invalid index");
+        if (this.timestamp < 1) return new Validation(false, "Invalid timestamp");
+        if (this.previousHash !== previousHash) return new Validation(false, "Invalid previous hash");
+        if (!this.data) return new Validation(false, "Invalid data");
+        if (!this.hash) return new Validation(false, "Invalid hash (empty)");
+        //if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
+        return new Validation();
     }
 }

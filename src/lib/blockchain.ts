@@ -1,4 +1,5 @@
 import Block from "./block";
+import Validation from "./validation";
 /**
  * Blockchain class
  */
@@ -19,29 +20,29 @@ export default class Blockchain {
      * @param block Block to be added to the blockchain
      * @returns Returns void
      */
-    addBlock(block: Block): boolean {
-        if (!block.isValid(
+    addBlock(block: Block): Validation {
+        const validation = block.isValid(
             this.blocks[this.blocks.length - 1].index,
             this.blocks[this.blocks.length - 1].hash,
-        )) {
-            return false
-        };
+        );
+        if (!validation.success) return new Validation(false, "Block invalid");
         this.blocks.push(block);
         this.nextIndex++;
-        return true;
+        return new Validation();
     }
 
     /**
      * 
      * @returns Returns TRUE if the blockchain is valid
      */
-    isValid(): boolean {
+    isValid(): Validation {
         for (let index = this.blocks.length - 1; index > 0; index--) {
             const currentBlock = this.blocks[index];
             const previousBlock = this.blocks[index - 1];
-            const isValid = currentBlock.isValid(previousBlock.index, previousBlock.hash);
-            if (!isValid) return false;
+            const validation = currentBlock.isValid(previousBlock.index, previousBlock.hash);
+            if (!validation.success)
+                return new Validation(false, `invalid block #${currentBlock.index} : ${validation.message}`);
         }
-        return true;
+        return new Validation();
     }
-}
+} 

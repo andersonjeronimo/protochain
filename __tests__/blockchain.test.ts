@@ -18,17 +18,17 @@ describe("Blockchain tests", () => {
         let block2: Block = new Block(1, blockchain.blocks[0].hash, "data");
         blockchain.addBlock(block2);
         blockchain.blocks[1].previousHash = "invalid previous hash";
-        expect(blockchain.isValid()).toBeFalsy();
+        expect(blockchain.isValid().success).toBeFalsy();
     })
     it("should add block", () => {
         const blockchain = new Blockchain();
         let block2: Block = new Block(1, blockchain.blocks[0].hash, "data");
-        expect(blockchain.addBlock(block2)).toBeTruthy();
+        expect(blockchain.addBlock(block2).success).toBeTruthy();
     })
     it("should NOT add block", () => {
         const blockchain = new Blockchain();
         let block2: Block = new Block(1, blockchain.blocks[0].hash, "data");
         block2.previousHash = "";
-        expect(blockchain.addBlock(block2)).toBeFalsy();
+        expect(blockchain.addBlock(block2).success).toBeFalsy();
     })
 })
