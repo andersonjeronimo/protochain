@@ -40,12 +40,13 @@ export default class Block {
      * 
      * @returns Returns TRUE if the block is valid
      */
-    isValid(): boolean {
-        if (this.index < 0) { return false; }
+    isValid(previousIndex: number, previousHash: string): boolean {
+        if (previousIndex !== this.index-1) { return false; }
         if (this.timestamp < 1) { return false; }
-        if (!this.previousHash) { return false; }        
+        if (this.previousHash !== previousHash) { return false; }
         if (!this.data) { return false; }
         if (!this.hash) { return false; }
+        //if (this.hash !== this.generateHash()) { return false; }
         return true;
     }
 }
