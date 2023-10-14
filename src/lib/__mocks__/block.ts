@@ -1,5 +1,5 @@
-import { SHA256 } from "crypto-js";
-import Validation from "./validation";
+//import { SHA256 } from "crypto-js";
+import Validation from "../validation";
 /**
  * Block class
  */
@@ -21,7 +21,6 @@ export default class Block {
         this.timestamp = Date.now();
         this.previousHash = previousHash;
         this.data = data;
-        this.hash = "";
         this.hash = this.generateHash();
     }
 
@@ -29,15 +28,14 @@ export default class Block {
      * @returns Generates the SHA256 block hash
      */
     generateHash(): string {
-        let hashBase: string = "";
+        return "MOCK_HASH";
+        /* let hashBase: string = "";
         Object.entries(this).forEach(
-            ([key, value]) => {
-                if(key.toString() !== 'hash') {
-                    hashBase = hashBase.concat(value);
-                }                
-            }
+            ([key, value]) => {                
+                hashBase = hashBase.concat(value);
+            }      
         )
-        return SHA256(hashBase).toString();
+        return SHA256(hashBase).toString(); */
     }
 
     /**
@@ -45,12 +43,15 @@ export default class Block {
      * @returns Returns TRUE if the block is valid
      */
     isValid(previousIndex: number, previousHash: string): Validation {
-        if (previousIndex !== this.index - 1) return new Validation(false, "Invalid index");
+        if (!previousHash || previousIndex < 0 || this.index < 0 || !this.data) {
+            return new Validation(false, "(MOCK) Invalid block");
+        }
+        /* if (previousIndex !== this.index-1) return new Validation(false, "Invalid index");
         if (this.timestamp < 1) return new Validation(false, "Invalid timestamp");
         if (this.previousHash !== previousHash) return new Validation(false, "Invalid previous hash");
         if (!this.data) return new Validation(false, "Invalid data");
-        if (!this.hash) return new Validation(false, "Invalid hash (empty)");
-        if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
+        if (!this.hash) return new Validation(false, "Invalid hash (empty)"); */
+        //if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
         return new Validation();
     }
 }
