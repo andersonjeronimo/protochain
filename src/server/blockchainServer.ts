@@ -15,7 +15,7 @@ app.use(express.json());
 
 const blockchain = new Blockchain();
 const previousHash = blockchain.blocks[blockchain.blocks.length - 1].hash;
-const block2 = new Block(blockchain.nextIndex, previousHash, "First Block");
+const block2 = new Block(blockchain.nextIndex, previousHash, "First Block", 1, "minerWalletAddress");
 blockchain.addBlock(block2);
 
 app.get('/status', (req, res, next) => {

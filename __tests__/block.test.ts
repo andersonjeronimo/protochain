@@ -1,47 +1,55 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, jest } from '@jest/globals';
+import Blockchain from '../src/lib/blockchain';
 import Block from '../src/lib/block';
 
+jest.mock('../src/lib/blockchain');
+//jest.mock('../src/lib/block');
+
 describe("Block tests", () => {
-    let genesis: Block;
+    let blockchain: Blockchain;
+    let block: Block;
+    let nonce: number = 1;
+    let miner: string = "walletAddress";
+    let difficulty: number = 1;
     beforeAll(() => {
-        genesis = new Block(0, "", "genesis block");
+        blockchain = new Blockchain();
+        block = new Block(
+            blockchain.nextIndex,
+            blockchain.getLastBlock().hash,
+            "Any Bitcoin transaction", nonce, miner);
+        blockchain.addBlock(block);
+
     });
-    it("should be valid", () => {
-        const block = new Block(1, genesis.hash, "block data");
-        const validation = block.isValid(genesis.index, genesis.hash);
+    it("should be valid", () => { 
+        const validation = block.isValid(block.index-1, block.previousHash, difficulty);
         expect(validation.success).toBeTruthy();
     })
-    it("should NOT be valid", () => {
-        let block = new Block(1, genesis.hash, "block data");
-        block.previousHash = "invalid previous hash";
-        const validation = block.isValid(genesis.index, genesis.hash);
+    it("should NOT be valid (nonce or miner)", () => {
+        block.nonce = -1;
+        block.miner = "";
+        const validation = block.isValid(block.index-1, block.previousHash, difficulty);
         expect(validation.success).toBeFalsy();
     })
-    it("should be NOT valid (previous hash)", () => {
-        const block = new Block(1, "invalid previous hash", "block data");
-        const validation = block.isValid(genesis.index, genesis.hash);
+
+    it("should be NOT valid (hash)", () => {        
+        let hash = block.previousHash;
+        hash = hash.concat("modification");
+        const validation = block.isValid(block.index-1, hash, difficulty);
         expect(validation.success).toBeFalsy();
     })
-    it("should be NOT valid (hash)", () => {
-        const block = new Block(1, genesis.hash, "block data");
-        block.hash = "";
-        const validation = block.isValid(genesis.index, genesis.hash);
-        expect(validation.success).toBeFalsy();
-    })
-    it("should be NOT valid (timestamp)", () => {
-        const block = new Block(1, genesis.hash, "block data");
+    it("should be NOT valid (timestamp)", () => {        
         block.timestamp = -1;
-        const validation = block.isValid(genesis.index, genesis.hash);
+        const validation = block.isValid(block.index-1, block.previousHash, difficulty);
         expect(validation.success).toBeFalsy();
     })
     it("should be NOT valid (data)", () => {
-        const block = new Block(1, genesis.hash, "");
-        const validation = block.isValid(genesis.index, genesis.hash);
+        block.data = "";
+        const validation = block.isValid(block.index-1, block.previousHash, difficulty);
         expect(validation.success).toBeFalsy();
     })
     it("should be NOT valid (index)", () => {
-        const block = new Block(-1, genesis.hash, "block data");
-        const validation = block.isValid(genesis.index, genesis.hash);
+        block.index = -1; 
+        const validation = block.isValid(block.index-1, block.previousHash, difficulty);
         expect(validation.success).toBeFalsy();
     })
 })
