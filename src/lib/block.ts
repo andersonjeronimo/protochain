@@ -1,5 +1,6 @@
 import { SHA256 } from "crypto-js";
 import Validation from "./validation";
+import BlockInfo from "./blockInfo";
 /**
  * Block class
  */
@@ -8,35 +9,23 @@ export default class Block {
     timestamp: number;
     hash: string;
     previousHash: string;
-    data: string; 
+    data: string;
     nonce: number;
     miner: string;
 
-
     /**
-     * Creates a new block
-     * @param index The block index in blockchain     
-     * @param previousHash The previous block hash
-     * @param data The block data
+     * 
+     * @param block The block to be created
      */
-
-    /**
-     * Creates a new block
-     * @param index The block index in blockchain     
-     * @param previousHash The previous block hash
-     * @param data The block transaction data
-     * @param nonce The block nonce
-     * @param miner The miner wallet address
-     */
-    constructor(index: number, previousHash: string, data: string, nonce: number, miner: string) {
-        this.index = index;
-        this.timestamp = Date.now();
-        this.previousHash = previousHash;
-        this.nonce = nonce;
-        this.miner = miner;
-        this.data = data;
-        this.hash = "";
-        this.hash = this.generateHash();
+    constructor(block?: Block) {
+        this.index = block?.index || 0;
+        this.timestamp = block?.timestamp || Date.now();
+        this.previousHash = block?.previousHash || "";
+        this.nonce = block?.nonce || 1;
+        this.miner = block?.miner || "";
+        this.data = block?.data || "";        
+        //this.hash = block?.hash || this.generateHash();
+        this.hash = block?.hash || "";
     }
 
     /**
@@ -91,12 +80,25 @@ export default class Block {
         if (!this.data) return new Validation(false, "Invalid data");
         if (!this.hash) return new Validation(false, "Invalid hash (empty)");
         if (this.nonce < 0 || !this.miner) return new Validation(false, "Not mined");
-
-        if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
-        
-        /* const prefix = this.getPrefix(difficulty);
-        if (this.hash !== this.generateHash() || !this.hash.startsWith(prefix))
-            return new Validation(false, "Invalid hash"); */
+        //if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
+        const prefix = this.getPrefix(difficulty);
+        if (!this.hash.startsWith(prefix))
+            return new Validation(false, "Invalid hash");
         return new Validation();
+    }
+    
+    /**
+     * 
+     * @param blockInfo Provided to miner to generate the next block
+     * @param miner The wallet address
+     * @returns The Blockinfo instance
+     */
+    static fromBlockInfo(blockInfo: BlockInfo, miner: string): Block {        
+        const block = new Block();
+            block.index = blockInfo.index;
+            block.previousHash = blockInfo.previousHash;            
+            block.data = blockInfo.data;
+            block.miner = miner;
+        return block;
     }
 }

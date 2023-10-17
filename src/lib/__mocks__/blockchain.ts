@@ -1,4 +1,5 @@
 import Block from "./block";
+import BlockInfo from "../blockInfo";
 import Validation from "../validation";
 /**
  * Blockchain class
@@ -6,13 +7,19 @@ import Validation from "../validation";
 export default class Blockchain {
     blocks: Block[];
     nextIndex: number = 0;
-    static readonly DIFFICULTY_SALT = 5;
+    static readonly DIFFICULTY_SALT = 10;
+    static readonly MAX_DIFFICULTY_SALT = 30;
 
     /**
      * Creates a new blockchain
      */
     constructor() {
-        this.blocks = [new Block(this.nextIndex, '', 'Genesis Block', 1, 'minerWalletAddress')];
+        this.blocks = [new Block({
+            index: this.nextIndex,
+            hash: "Genesis Hash",
+            previousHash: "Genesis",
+            data: "Genesis Block",
+            timestamp: Date.now()} as Block)];
         this.nextIndex++;
     }
 
@@ -31,8 +38,8 @@ export default class Blockchain {
      */
     addBlock(block: Block): Validation {
         const validation = block.isValid(
-            this.blocks[this.blocks.length - 1].index,
-            this.blocks[this.blocks.length - 1].hash,
+            this.getLastBlock().index,
+            this.getLastBlock().hash,
             this.getDifficulty()
         );
         if (!validation.success) {
@@ -41,25 +48,6 @@ export default class Blockchain {
         this.blocks.push(block);
         this.nextIndex++;
         return new Validation();
-    }
-
-    /**
-     * 
-     * @param data Data used to create a new block and add it to the blockchain
-     * @returns A validation success | error
-     */
-    addBlockByData(data: string): Validation {
-        const block = new Block(
-            this.nextIndex, this.blocks[this.nextIndex - 1].hash, data, 1, 'minerWalletAddress');
-        const validation = block.isValid(
-            block.index - 1, this.blocks[block.index - 1].hash, this.getDifficulty());
-        if (validation.success) {
-            this.blocks.push(block);
-            this.nextIndex++;
-            return new Validation(true, block.hash);
-        } else {
-            return validation;
-        }
     }
 
     /**
@@ -81,17 +69,38 @@ export default class Blockchain {
 
     /**
      * 
+     * @returns The next block info to the miner
+     */
+    getNextBlock(): BlockInfo {
+        const index = this.nextIndex;
+        const previousHash = this.getLastBlock().hash;
+        const difficulty = this.getDifficulty();
+        const maxDifficulty = Blockchain.MAX_DIFFICULTY_SALT;
+        const feePerTx = 1;
+        const data = "ANY TRANSACTION";
+        return {
+            index,
+            previousHash,
+            difficulty,
+            maxDifficulty,
+            feePerTx,
+            data
+        } as BlockInfo;
+    }
+
+    /**
+     * 
      * @returns Returns TRUE if the blockchain is valid
      */
     isValid(): Validation {
-        for (let index = this.blocks.length - 1; index > 0; index--) {
+        /* for (let index = this.blocks.length - 1; index > 0; index--) {
             const currentBlock = this.blocks[index];
             const previousBlock = this.blocks[index - 1];
             const validation = currentBlock
                 .isValid(previousBlock.index, previousBlock.hash, this.getDifficulty());
             if (!validation.success)
                 return new Validation(false, `invalid block #${currentBlock.index} : ${validation.message}`);
-        }
+        } */
         return new Validation();
     }
 } 
