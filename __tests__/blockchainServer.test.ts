@@ -9,7 +9,6 @@ jest.mock('../src/lib/block');
 jest.mock('../src/lib/blockchain');
 
 describe('Blockchain Server Tests', () => {
-
     let blockchain: Blockchain;
     let block: Block;
     beforeAll(() => {

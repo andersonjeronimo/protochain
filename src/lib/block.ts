@@ -14,7 +14,7 @@ export default class Block {
     miner: string;
 
     /**
-     * 
+     * Creates a new block
      * @param block The block to be created
      */
     constructor(block?: Block) {
@@ -24,7 +24,6 @@ export default class Block {
         this.nonce = block?.nonce || 1;
         this.miner = block?.miner || "";
         this.data = block?.data || "";        
-        //this.hash = block?.hash || this.generateHash();
         this.hash = block?.hash || "";
     }
 
@@ -73,17 +72,17 @@ export default class Block {
      * @param difficulty The difficulty factor to create a block
      * @returns Returns a validation if block is valid or not
      */
-    isValid(previousIndex: number, previousHash: string, difficulty: number): Validation {
+    isValid(previousIndex: number, previousHash: string, difficulty: number): Validation { 
+        console.log(this);
         if (previousIndex !== this.index - 1) return new Validation(false, "Invalid index");
         if (this.timestamp < 1) return new Validation(false, "Invalid timestamp");
         if (this.previousHash !== previousHash) return new Validation(false, "Invalid previous hash");
         if (!this.data) return new Validation(false, "Invalid data");
         if (!this.hash) return new Validation(false, "Invalid hash (empty)");
-        if (this.nonce < 0 || !this.miner) return new Validation(false, "Not mined");
-        //if (this.hash !== this.generateHash()) return new Validation(false, "Invalid hash");
+        if (this.nonce < 0 || !this.miner) return new Validation(false, "Not mined");        
         const prefix = this.getPrefix(difficulty);
         if (!this.hash.startsWith(prefix))
-            return new Validation(false, "Invalid hash");
+            return new Validation(false, "Invalid hash prefix");
         return new Validation();
     }
     
