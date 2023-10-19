@@ -1,5 +1,7 @@
 import Block from "./block";
 import BlockInfo from "./blockInfo";
+import Transaction from "./transaction";
+import TransactionType from "./transactionType";
 import Validation from "./validation";
 /**
  * Blockchain class
@@ -18,7 +20,14 @@ export default class Blockchain {
             index: this.nextIndex,
             hash: "Genesis Hash",
             previousHash: "Genesis",
-            data: "Genesis Block",
+            transactions: [
+                new Transaction(
+                    {
+                        type: TransactionType.FEE,
+                        data: new Date().toString()
+                    } as Transaction
+                )
+            ] as Transaction[],
             timestamp: Date.now()
         } as Block)];
         this.nextIndex++;
@@ -76,14 +85,21 @@ export default class Blockchain {
         const difficulty = this.getDifficulty();
         const maxDifficulty = Blockchain.MAX_DIFFICULTY_FACTOR;
         const feePerTx = 1;
-        const data = "ANY TRANSACTION";
+        const transactions = [
+            new Transaction(
+                {
+                    type: TransactionType.FEE,
+                    data: new Date().toString()
+                } as Transaction
+            )
+        ] as Transaction[];
         return {
             index,
             previousHash,
             difficulty,
             maxDifficulty,
             feePerTx,
-            data
+            transactions
         } as BlockInfo;
     }
 
