@@ -1,6 +1,7 @@
 import { SHA256 } from "crypto-js";
 import TransactionType from "./transactionType";
 import Validation from "./validation";
+import TransactionInput from "./transactionInput";
 /**
  * Transaction class
  */
@@ -8,7 +9,8 @@ export default class Transaction {
     type: TransactionType;
     timestamp: number;
     hash: string;
-    data: string;
+    txInput: TransactionInput;
+    toAddress: string;
     /**
      * 
      * @param tx Transaction object to construct the... 
@@ -16,8 +18,9 @@ export default class Transaction {
     constructor(tx?: Transaction) {
         this.type = tx?.type || TransactionType.REGULAR;
         this.timestamp = tx?.timestamp || Date.now();
-        this.data = tx?.data || "";
+        this.toAddress = tx?.toAddress || "";
         this.hash = tx?.hash || this.generateHash();
+        this.txInput = new TransactionInput(tx?.txInput) || new TransactionInput();
     }
 
     /**
@@ -27,7 +30,7 @@ export default class Transaction {
         let hashBase: string = "";
         Object.entries(this).forEach(
             ([key, value]) => {
-                if (key.toString() !== 'hash') {
+                if (key.toString() !== 'hash' || key.toString() !== 'txInput') {
                     hashBase = hashBase.concat(value);
                 }
             }
@@ -40,7 +43,7 @@ export default class Transaction {
      * @returns Validation for object entries
      */
     isValid(): Validation {        
-        if (!this.data) return new Validation(false, "Invalid data (empty)");
+        if (!this.toAddress) return new Validation(false, "Invalid to address (empty)");
         if (!this.hash) return new Validation(false, "Invalid hash (empty)");
         return new Validation();
     }

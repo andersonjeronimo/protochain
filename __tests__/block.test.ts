@@ -5,23 +5,21 @@ import BlockInfo from '../src/lib/blockInfo';
 import TransactionType from '../src/lib/transactionType';
 import Transaction from '../src/lib/transaction';
 
-jest.mock('../src/lib/blockchain');
+//jest.mock('../src/lib/blockchain');
 
 describe("Block tests", () => {
     let blockchain: Blockchain;
     let block: Block;
     let blockInfo: BlockInfo;
-    let difficulty: number;
-    beforeAll(() => {       
-        difficulty = 1 
+    beforeAll(() => {
         blockchain = new Blockchain();
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, data: new Date().toString() } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, data: new Date().toString() } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, data: new Date().toString() } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
         block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
-        block.mine(difficulty);
+        block.mine(blockchain.getDifficulty());
     });
 
     it("Should construct a block", () => {
@@ -32,7 +30,7 @@ describe("Block tests", () => {
                 previousHash: blockchain.getLastBlock().hash,
                 nonce: 1,
                 miner: `${process.env.WALLET_PUBLIC_KEY}`,
-                transactions : [] as Transaction[],
+                transactions: [] as Transaction[],
                 hash: "hash"
             } as Block);
 
@@ -45,83 +43,80 @@ describe("Block tests", () => {
         expect(block.hash).toBe("hash");
     })
 
-    it("should be valid", () => {        
+    it("should be valid", () => {
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(true);
     })
 
-    it("should NOT be valid (nonce or miner)", () => {       
+    it("should NOT be valid (nonce or miner)", () => {
         block.nonce = -1;
         block.miner = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
 
     it("should be NOT valid (hash)", () => {
         block.nonce = 1;
-        block.miner = `${process.env.WALLET_PUBLIC_KEY}`;        
+        block.miner = `${process.env.WALLET_PUBLIC_KEY}`;
         block.hash = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
 
-    it("should be NOT valid (hash prefix)", () => {        
-        block.mine(difficulty);
-        let _hash = block.hash;
-        let _prefix = new Array(difficulty + 1).join("x");
-        block.hash = _prefix.concat(_hash.slice(difficulty + 1, _hash.length + 1));
+    it("should be NOT valid (hash prefix)", () => {
+        block.mine(blockchain.getDifficulty() - 1);
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
 
     it("should be NOT valid (previousHash)", () => {
-        block.mine(difficulty);
+        block.mine(blockchain.getDifficulty());
         block.previousHash = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
 
-    it("should be NOT valid (timestamp)", () => {        
-        block.previousHash = blockchain.getLastBlock().hash;        
+    it("should be NOT valid (timestamp)", () => {
+        block.previousHash = blockchain.getLastBlock().hash;
         block.timestamp = -1;
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
     it("should be NOT valid (transactions)", () => {
         block.timestamp = Date.now();
-        block.transactions[0].data = "";        
+        block.transactions[0].toAddress = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
-    it("should be NOT valid (transaction type = fee)", () => {        
-        block.transactions[0].data = new Date().toString();
+    it("should be NOT valid (transaction type = fee)", () => {
+        block.transactions[0].toAddress = "public key";
         block.transactions[1].type = TransactionType.FEE;
-        
+
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
     it("should be NOT valid (index)", () => {
@@ -130,10 +125,10 @@ describe("Block tests", () => {
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
-            difficulty);
+            blockchain.getDifficulty());
         expect(validation.success).toEqual(false);
     })
-    it("should provide a Block from block info", () => {        
+    it("should provide a Block from block info", () => {
         const blockInfo: BlockInfo = blockchain.getNextBlock();
         expect(Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`)).toBeInstanceOf(Block);
     })

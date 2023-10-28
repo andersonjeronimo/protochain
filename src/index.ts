@@ -8,9 +8,9 @@ import Validation from "./lib/validation";
 
 const blockchain: Blockchain = new Blockchain();
 
-blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, data: new Date().toString(), hash: "f001" } as Transaction));
-blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, data: new Date().toString(), hash: "r001" } as Transaction));
-blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, data: new Date().toString(), hash: "r002" } as Transaction));
+blockchain.addTransaction(new Transaction({ type: TransactionType.FEE } as Transaction));
+blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as Transaction));
+blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as Transaction));
 
 const blockInfo1: BlockInfo = blockchain.getNextBlock();
 

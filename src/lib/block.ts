@@ -73,6 +73,7 @@ export default class Block {
      */
     mine(difficulty: number) {
         const prefix = this.getPrefix(difficulty);
+        console.log("PREFIX>>>"+prefix);
         if (!this.hash.startsWith(prefix)) {
             do {
                 this.nonce++;

@@ -9,29 +9,26 @@ import Validation from "./validation";
 export default class Blockchain {
     blocks: Block[];
     mempool: Transaction[];
-    blockInfos: BlockInfo[];
+    blockInfoCache: BlockInfo[];
     nextIndex: number = 0;
     static readonly DIFFICULTY_FACTOR = 10;
     static readonly MAX_DIFFICULTY_FACTOR = 50;
-    static readonly TX_PER_BLOCK = 2;
+    static readonly TX_PER_BLOCK = 3;
 
     /**
      * Creates a new blockchain
      */
     constructor() {
         this.mempool = [] as Transaction[]; //São obtidas nas wallets
-        this.blockInfos = [] as BlockInfo[];
+        this.blockInfoCache = [] as BlockInfo[];
         this.blocks = [new Block({
             index: this.nextIndex,
             hash: "Genesis Hash",
             previousHash: "Genesis",
             transactions: [
-                new Transaction(
-                    {
-                        type: TransactionType.FEE,
-                        data: new Date().toString()
-                    } as Transaction
-                )
+                new Transaction({
+                    type: TransactionType.FEE
+                } as Transaction)
             ] as Transaction[],
             timestamp: Date.now()
         } as Block)];
@@ -43,7 +40,8 @@ export default class Blockchain {
      * @returns The difficulty factor to mine a block
      */
     getDifficulty(): number {
-        return Math.ceil(this.blocks.length / Blockchain.DIFFICULTY_FACTOR);
+        return this.blocks.length < Blockchain.DIFFICULTY_FACTOR ?
+            1 : Math.ceil(this.blocks.length / Blockchain.DIFFICULTY_FACTOR);
     }
 
     /**
@@ -57,15 +55,13 @@ export default class Blockchain {
             this.getLastBlock().hash,
             this.getDifficulty()
         );
-        if (!validation.success) return validation;        
+        if (!validation.success) return validation;
 
-        //Verificar se blockinfo já foi processado por outro minerador e excluído da lista         
-        const sentBlockInfo: BlockInfo | undefined = this.blockInfos.find(b => {
-            return b.index === block.index;
-        })
-        if (sentBlockInfo === undefined) {
+        //Verificar se blockinfo já foi processado por outro minerador e excluído da lista 
+        if (this.blockInfoCache.length === 0) {
             return new Validation(false, `Block # ${block.index} already accepted from another miner`);
         }
+        const sentBlockInfo: BlockInfo = this.blockInfoCache[0];
 
         //Transações enviadas pela blockchain para mineradores
         const sentTxs = [] as string[];
@@ -73,7 +69,7 @@ export default class Blockchain {
             if (tx.type !== TransactionType.FEE) {
                 sentTxs.push(tx.hash);
             }
-        });        
+        });
 
         //Transações recebidas do minerador
         const receivedTxs = [] as string[];
@@ -97,9 +93,9 @@ export default class Blockchain {
 
         //Se não há diferenças, entra para blockchain
         this.filterMempool(receivedTxs);
-        this.filterBlockInfos(block.index);
+        this.filterblockInfoCache(block.index);
         this.blocks.push(block);
-        this.nextIndex++;        
+        this.nextIndex++;
         return new Validation(true, block.hash);
     }
 
@@ -117,8 +113,8 @@ export default class Blockchain {
      * 
      * @param index Index of the blockinfo to be removed
      */
-    filterBlockInfos(index: number) {        
-        this.blockInfos = [] as BlockInfo[];
+    filterblockInfoCache(index: number) {
+        this.blockInfoCache = [] as BlockInfo[];
     }
 
     /**
@@ -157,8 +153,8 @@ export default class Blockchain {
      * @returns The next block info to the miner
      */
     getNextBlock(): BlockInfo {
-        if (this.blockInfos.length > 0) {
-            return this.blockInfos[0];
+        if (this.blockInfoCache.length > 0) {
+            return this.blockInfoCache[0];
         }
         const index = this.nextIndex;
         const previousHash = this.getLastBlock().hash;
@@ -168,7 +164,7 @@ export default class Blockchain {
         const mempoolTxs = this.mempool.length > 0 ?
             this.mempool.slice(0, Blockchain.TX_PER_BLOCK) as Transaction[] :
             [] as Transaction[];
-        const blockInfo = {            
+        const blockInfo = {
             index,
             previousHash,
             difficulty,
@@ -181,8 +177,8 @@ export default class Blockchain {
          * Armazena o blockInfo para comparar posteriormente se houve alteração
          * das transações através dos 'hashes'.
          */
-        if (blockInfo.transactions.length > 0) {
-            this.blockInfos.push(blockInfo);            
+        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {
+            this.blockInfoCache.push(blockInfo);
         }
         return blockInfo;
     }
@@ -193,16 +189,12 @@ export default class Blockchain {
      */
     isValid(): Validation {
         if (this.blocks.length > 1) {
+            let validation: Validation;
             for (let index = this.blocks.length - 1; index > 0; index--) {
                 const currentBlock = this.blocks[index];
                 const previousBlock = this.blocks[index - 1];
-                const validation = currentBlock
-                    .isValid(previousBlock.index, previousBlock.hash, this.getDifficulty());
-                if (!validation.success) {
-                    return new Validation(false, `invalid block #${currentBlock.index} : ${validation.message}`);
-                } else {
-                    return new Validation();
-                }
+                validation = currentBlock.isValid(previousBlock.index, previousBlock.hash, this.getDifficulty());
+                if (!validation.success) return validation;
             }
         }
         return new Validation();
