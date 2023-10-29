@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeAll } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import Blockchain from '../src/lib/blockchain';
 import Block from '../src/lib/block';
 import Transaction from '../src/lib/transaction';
@@ -42,7 +42,8 @@ describe("Blockchain tests", () => {
         let block: Block;
 
         blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));        
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet002" } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
         block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);

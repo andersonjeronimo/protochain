@@ -31,6 +31,18 @@ app.get('/status', (req: Request, res: Response, next: NextFunction) => {
     });
 })
 
+app.post('/transactions', (req: Request, res: Response, next: NextFunction) => {
+    const data = req.body;
+    if (data.toAddress === undefined) return res.sendStatus(422);
+    const tx = new Transaction(data as Transaction);
+    const validation = blockchain.addTransaction(tx);
+    if (validation.success) {
+        return res.status(201).json(tx);
+    } else {
+        return res.status(422).json(validation.message);
+    }
+});
+
 app.get('/transactions', (req: Request, res: Response, next: NextFunction) => {
     res.json({
         nextTxs: blockchain.mempool.slice(0, Blockchain.TX_PER_BLOCK),
@@ -41,13 +53,6 @@ app.get('/transactions', (req: Request, res: Response, next: NextFunction) => {
 app.get('/blocks/next', (req: Request, res: Response, next: NextFunction) => {
     const blockInfo = blockchain.getNextBlock() as BlockInfo;    
     return res.json(blockInfo);
-});
-
-app.get('/blocks/:hash', (req: Request, res: Response, next: NextFunction) => {
-    const hash = req.params.hash;
-    let block = blockchain.getBlock(hash) as Block;
-    if (!block) return res.sendStatus(404);
-    return res.json(block);
 });
 
 app.post('/blocks', (req: Request, res: Response, next: NextFunction) => {    
@@ -61,17 +66,15 @@ app.post('/blocks', (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-app.post('/transactions', (req: Request, res: Response, next: NextFunction) => {
-    const data = req.body;
-    if (data.hash === undefined) return res.sendStatus(422);
-    const tx = new Transaction(data as Transaction);
-    const validation = blockchain.addTransaction(tx);
-    if (validation.success) {
-        return res.status(201).json(tx);
-    } else {
-        return res.status(422).json(validation.message);
-    }
+app.get('/blocks/:hash', (req: Request, res: Response, next: NextFunction) => {
+    const hash = req.params.hash;
+    let block = blockchain.getBlock(hash) as Block;
+    if (!block) return res.sendStatus(404);
+    return res.json(block);
 });
+
+
+
 
 /**
  * For supertest

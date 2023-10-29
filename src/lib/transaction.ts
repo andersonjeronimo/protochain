@@ -9,8 +9,8 @@ export default class Transaction {
     type: TransactionType;
     timestamp: number;
     hash: string;
-    txInput: TransactionInput;
-    toAddress: string;
+    txInput: TransactionInput | undefined;
+    toAddress: string | undefined;
     /**
      * 
      * @param tx Transaction object to construct the... 
@@ -18,9 +18,9 @@ export default class Transaction {
     constructor(tx?: Transaction) {
         this.type = tx?.type || TransactionType.REGULAR;
         this.timestamp = tx?.timestamp || Date.now();
-        this.toAddress = tx?.toAddress || "";
+        this.toAddress = tx?.toAddress || undefined;
         this.hash = tx?.hash || this.generateHash();
-        this.txInput = new TransactionInput(tx?.txInput) || new TransactionInput();
+        this.txInput = tx?.txInput ? new TransactionInput(tx.txInput) : undefined;
     }
 
     /**
@@ -42,9 +42,14 @@ export default class Transaction {
      * 
      * @returns Validation for object entries
      */
-    isValid(): Validation {        
+    isValid(): Validation {         
         if (!this.toAddress) return new Validation(false, "Invalid to address (empty)");
         if (!this.hash) return new Validation(false, "Invalid hash (empty)");
+        if (this.txInput !== undefined) {
+            const validation = this.txInput.isValid();
+            if (!validation.success) 
+            return new Validation(false, `Invalid Tx Input due: ${validation.message}`);
+        }
         return new Validation();
     }
 }

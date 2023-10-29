@@ -55,7 +55,7 @@ export default class Blockchain {
             this.getLastBlock().hash,
             this.getDifficulty()
         );
-        if (!validation.success) return validation;
+        if (!validation.success) return validation;        
 
         //Verificar se blockinfo já foi processado por outro minerador e excluído da lista 
         if (this.blockInfoCache.length === 0) {
@@ -160,7 +160,7 @@ export default class Blockchain {
         const previousHash = this.getLastBlock().hash;
         const difficulty = this.getDifficulty();
         const maxDifficulty = Blockchain.MAX_DIFFICULTY_FACTOR;
-        const feePerTx = 1;
+        const feePerTx = 1;        
         const mempoolTxs = this.mempool.length > 0 ?
             this.mempool.slice(0, Blockchain.TX_PER_BLOCK) as Transaction[] :
             [] as Transaction[];
@@ -177,7 +177,7 @@ export default class Blockchain {
          * Armazena o blockInfo para comparar posteriormente se houve alteração
          * das transações através dos 'hashes'.
          */
-        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {
+        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {            
             this.blockInfoCache.push(blockInfo);
         }
         return blockInfo;

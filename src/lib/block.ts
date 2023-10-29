@@ -72,8 +72,7 @@ export default class Block {
      * @param difficulty The difficulty factor to create a block
      */
     mine(difficulty: number) {
-        const prefix = this.getPrefix(difficulty);
-        console.log("PREFIX>>>"+prefix);
+        const prefix = this.getPrefix(difficulty);        
         if (!this.hash.startsWith(prefix)) {
             do {
                 this.nonce++;
