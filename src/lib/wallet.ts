@@ -12,25 +12,35 @@ const encoding = "hex";
  * Wallet class
  */
 export default class Wallet {
-    privateKey: string;
-    publicKey: string;
+    keyPair: ECPairInterface | undefined;
+    privateKey: string | undefined;
+    publicKey: string | undefined;
     /**
      * Wallet Import Format (WIF) is a standardized method for displaying Bitcoin private keys
      * using the Base58Check encoding scheme. WIF format was standardized in order to allow 
      * all Bitcoin wallets to import and export private keys.
      */
-    constructor(wifOrPrivateKey?: string) {
-        let keyPair: ECPairInterface | undefined;
-        if (wifOrPrivateKey) {
-            if (wifOrPrivateKey.length === 64) {
-                keyPair = ECPair.fromPrivateKey(Buffer.from(wifOrPrivateKey, encoding));
-            } else {
-                keyPair = ECPair.fromWIF(wifOrPrivateKey);
-            }
+    constructor(wifOrKey?: string) {
+        if (wifOrKey) {
+            wifOrKey.length < 65 ?
+                this.recoverFromPrivateKey(wifOrKey) :
+                this.recoverFromWIF(wifOrKey);
         } else {
-            keyPair = ECPair.makeRandom();
-        }        
-        this.privateKey = keyPair.privateKey?.toString(encoding) || "";
-        this.publicKey = keyPair.publicKey.toString(encoding);
+            this.keyPair = ECPair.makeRandom();
+            this.privateKey = this.keyPair.privateKey?.toString(encoding) || undefined;
+            this.publicKey = this.keyPair.publicKey.toString(encoding);
+        }
+    }
+
+    recoverFromWIF(WIF: string) {
+        this.keyPair = ECPair.fromWIF(WIF);
+        this.privateKey = this.keyPair.privateKey?.toString(encoding) || undefined;
+        this.publicKey = this.keyPair.publicKey.toString(encoding);
+    }
+
+    recoverFromPrivateKey(privateKey: string) {
+        this.keyPair = ECPair.fromPrivateKey(Buffer.from(privateKey, encoding));
+        this.privateKey = this.keyPair.privateKey?.toString(encoding) || undefined;
+        this.publicKey = this.keyPair.publicKey.toString(encoding);
     }
 }
