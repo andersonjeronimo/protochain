@@ -17,6 +17,9 @@ const rl = readline.createInterface({
     output: process.stdout
 })
 
+/**
+ * Main function for client CLI (command line interface)
+ */
 function menu() {
     setTimeout(() => {
         console.clear();
@@ -91,6 +94,10 @@ function getBalance() {
     return preMenu("Press any key to MAIN MENU");
 }
 
+/**
+ * 
+ * @returns Transaction sent to mempool
+ */
 function sendTx() {
     console.clear();
     if (!myWalletPub) {
@@ -131,7 +138,7 @@ function sendTx() {
             } catch (error: any) {
                 console.error(error.response ? error.response.data : error.message);                
             }
-            return preMenu("End of: Send Tx");
+            return preMenu("Transaction send with success. Press any key to MAIN MENU");
         })
     })
     preMenu("Press any key to MAIN MENU");

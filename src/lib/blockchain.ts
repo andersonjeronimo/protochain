@@ -52,9 +52,9 @@ export default class Blockchain {
     addBlock(block: Block): Validation {
         const validation = block.isValid(
             this.getLastBlock().index,
-            this.getLastBlock().hash,
+            this.getLastBlock().hash!,
             this.getDifficulty()
-        );
+        );        
         if (!validation.success) return validation;        
 
         //Verificar se blockinfo já foi processado por outro minerador e excluído da lista 
@@ -193,7 +193,7 @@ export default class Blockchain {
             for (let index = this.blocks.length - 1; index > 0; index--) {
                 const currentBlock = this.blocks[index];
                 const previousBlock = this.blocks[index - 1];
-                validation = currentBlock.isValid(previousBlock.index, previousBlock.hash, this.getDifficulty());
+                validation = currentBlock.isValid(previousBlock.index, previousBlock.hash!, this.getDifficulty());
                 if (!validation.success) return validation;
             }
         }

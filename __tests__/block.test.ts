@@ -4,6 +4,7 @@ import Block from '../src/lib/block';
 import BlockInfo from '../src/lib/blockInfo';
 import TransactionType from '../src/lib/transactionType';
 import Transaction from '../src/lib/transaction';
+import Wallet from '../src/lib/wallet';
 
 //jest.mock('../src/lib/blockchain');
 
@@ -11,9 +12,10 @@ describe("Block tests", () => {
     let blockchain: Blockchain;
     let block: Block;
     let blockInfo: BlockInfo;
+    let wallet: Wallet;
     beforeAll(() => {
-        blockchain = new Blockchain();
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
+        wallet = new Wallet();
+        blockchain = new Blockchain();        
         blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
         blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
 
@@ -29,7 +31,7 @@ describe("Block tests", () => {
                 timestamp: 1,
                 previousHash: blockchain.getLastBlock().hash,
                 nonce: 1,
-                miner: `${process.env.WALLET_PUBLIC_KEY}`,
+                miner: wallet.publicKey,
                 transactions: [] as Transaction[],
                 hash: "hash"
             } as Block);
@@ -38,7 +40,7 @@ describe("Block tests", () => {
         expect(block.timestamp).toBe(1);
         expect(block.previousHash).toBe(blockchain.getLastBlock().hash);
         expect(block.nonce).toBe(1);
-        expect(block.miner).toBe(`${process.env.WALLET_PUBLIC_KEY}`);
+        expect(block.miner).toBe(wallet.publicKey);
         expect(block.transactions).toBeInstanceOf(Array);
         expect(block.hash).toBe("hash");
     })
@@ -63,7 +65,7 @@ describe("Block tests", () => {
 
     it("should be NOT valid (hash)", () => {
         block.nonce = 1;
-        block.miner = `${process.env.WALLET_PUBLIC_KEY}`;
+        block.miner = wallet.publicKey!;
         block.hash = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
@@ -110,7 +112,7 @@ describe("Block tests", () => {
         expect(validation.success).toEqual(false);
     })
     it("should be NOT valid (transaction type = fee)", () => {
-        block.transactions[0].toAddress = "public key";
+        block.transactions[0].toAddress = wallet.publicKey;
         block.transactions[1].type = TransactionType.FEE;
 
         const validation = block.isValid(
@@ -130,6 +132,6 @@ describe("Block tests", () => {
     })
     it("should provide a Block from block info", () => {
         const blockInfo: BlockInfo = blockchain.getNextBlock();
-        expect(Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`)).toBeInstanceOf(Block);
+        expect(Block.fromBlockInfo(blockInfo, wallet.publicKey!)).toBeInstanceOf(Block);
     })
 })

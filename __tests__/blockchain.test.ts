@@ -4,10 +4,19 @@ import Block from '../src/lib/block';
 import Transaction from '../src/lib/transaction';
 import TransactionType from '../src/lib/transactionType';
 import BlockInfo from '../src/lib/blockInfo';
+import Wallet from '../src/lib/wallet';
 
 //jest.mock('../src/lib/block');
 
-describe("Blockchain tests", () => {    
+describe("Blockchain tests", () => {
+    let wallet1: Wallet;
+    let wallet2: Wallet;
+    let wallet3: Wallet;
+    beforeAll(() => {
+        wallet1 = new Wallet();
+        wallet2 = new Wallet();
+        wallet3 = new Wallet();
+    });
 
     it("should has genesis block", () => {
         const blockchain = new Blockchain();
@@ -24,11 +33,11 @@ describe("Blockchain tests", () => {
         let blockInfo: BlockInfo | undefined;
         let block: Block;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
-        
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
+
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
 
         block.mine(blockchain.getDifficulty());
         blockchain.addBlock(block);
@@ -41,12 +50,11 @@ describe("Blockchain tests", () => {
         let blockInfo: BlockInfo;
         let block: Block;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet002" } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
 
         block.mine(blockchain.getDifficulty());
         const validation = blockchain.addBlock(block);
@@ -58,12 +66,12 @@ describe("Blockchain tests", () => {
         let blockchain = new Blockchain();
         let blockInfo: BlockInfo;
         let block: Block;
-
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
         
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
+
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
 
         block.mine(blockchain.getDifficulty());
         blockchain.blockInfoCache = [] as BlockInfo[];
@@ -76,12 +84,12 @@ describe("Blockchain tests", () => {
         let blockchain = new Blockchain();
         let blockInfo: BlockInfo;
         let block: Block;
-
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
         
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
+
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
         //block.mine(blockchain.getDifficulty() - 1);
         block.hash = "1".concat(block.hash.slice(0, -1));
 
@@ -94,12 +102,11 @@ describe("Blockchain tests", () => {
         let blockInfo: BlockInfo;
         let block: Block;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet002" } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
 
         block.transactions.pop();
         block.mine(1);
@@ -113,13 +120,13 @@ describe("Blockchain tests", () => {
         let blockInfo: BlockInfo;
         let block: Block;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));        
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
+        block = Block.fromBlockInfo(blockInfo, wallet1.publicKey!);
 
-        block.transactions.push(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet003" } as Transaction));
+        block.transactions.push(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet1.publicKey } as Transaction));
         block.mine(blockchain.getDifficulty());
 
         const validation = blockchain.addBlock(block);
@@ -129,7 +136,7 @@ describe("Blockchain tests", () => {
 
     it("should get a block", () => {
         let blockchain = new Blockchain();
-        const hash = blockchain.getLastBlock().hash;        
+        const hash = blockchain.getLastBlock().hash;
         expect(blockchain.getBlock(hash)).toBeInstanceOf(Block);
     })
 
@@ -137,9 +144,8 @@ describe("Blockchain tests", () => {
         let blockchain = new Blockchain();
         let blockInfo: BlockInfo;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet002" } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
         expect(blockInfo.transactions.length).toBeGreaterThan(0);
@@ -148,7 +154,7 @@ describe("Blockchain tests", () => {
     it("should NOT add a transaction", () => {
         const blockchain = new Blockchain();
         const validation = blockchain.addTransaction(new Transaction({ type: TransactionType.FEE } as Transaction));
-               
+
         expect(validation.success).toBe(false);
     })
 
@@ -161,14 +167,14 @@ describe("Blockchain tests", () => {
 
     it("should get a block info from cache", () => {
         let blockchain = new Blockchain();
-        let blockInfo: BlockInfo;     
+        let blockInfo: BlockInfo;
 
-        blockchain.addTransaction(new Transaction({ type: TransactionType.FEE, toAddress: "miner001" } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: "wallet001" } as Transaction));
-        
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet2.publicKey } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: wallet3.publicKey } as Transaction));
+
         blockInfo = blockchain.getNextBlock();
-        blockInfo = blockchain.getNextBlock();        
-        
+        blockInfo = blockchain.getNextBlock();
+
         expect(blockInfo).toBeTruthy();
     })
 

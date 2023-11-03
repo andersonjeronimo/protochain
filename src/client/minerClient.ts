@@ -4,8 +4,9 @@ dotenv.config();
 import axios from 'axios';
 import BlockInfo from '../lib/blockInfo';
 import Block from '../lib/block';
+import Wallet from '../lib/wallet';
 
-let mineCount = 0;
+const miner = new Wallet();
 
 async function mine() {
     console.log("Coletando informações do próximo bloco...");
@@ -16,19 +17,19 @@ async function mine() {
             mine();
         }, 10000);
     }
-    const blockInfo = data as BlockInfo;
-    
-    const newBlock = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);    
+    const blockInfo = data as BlockInfo;    
+    const newBlock = Block.fromBlockInfo(blockInfo, miner.publicKey!);    
 
     console.log(`Iniciando mineração do bloco # ${newBlock.index}...`);
     console.log(`Dificuldade atual da rede: ${blockInfo.difficulty}`);
+    
     newBlock.mine(blockInfo.difficulty);
+    
     console.log(`Bloco ${newBlock.hash} minerado com sucesso.`);
     try {
         await axios.post(`${process.env.SERVER}blocks/`, newBlock);
         console.log("Bloco aceito na rede blockchain.");
-        mineCount++;
-        console.log(`Total de bloco(s) até o momento: ${mineCount}`);
+        console.log(`Total de bloco(s) até o momento: ${newBlock.index}`);
     } catch (error: any) {
         console.error(error.response ? error.response.data : error.message)
     }
