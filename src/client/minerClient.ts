@@ -18,12 +18,12 @@ async function mine() {
         }, 10000);
     }
     const blockInfo = data as BlockInfo;    
-    const newBlock = Block.fromBlockInfo(blockInfo, miner.publicKey!);    
+    const newBlock = Block.fromBlockInfo(blockInfo);    
 
     console.log(`Iniciando mineração do bloco # ${newBlock.index}...`);
     console.log(`Dificuldade atual da rede: ${blockInfo.difficulty}`);
     
-    newBlock.mine(blockInfo.difficulty);
+    newBlock.mine(blockInfo.difficulty, miner.publicKey!);
     
     console.log(`Bloco ${newBlock.hash} minerado com sucesso.`);
     try {

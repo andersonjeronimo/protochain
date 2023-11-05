@@ -15,13 +15,13 @@ describe("Block tests", () => {
     let wallet: Wallet;
     beforeAll(() => {
         wallet = new Wallet();
-        blockchain = new Blockchain();        
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
-        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR, toAddress: process.env.WALLET_PUBLIC_KEY } as Transaction));
+        blockchain = new Blockchain(wallet.publicKey!);        
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as Transaction));
+        blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as Transaction));
 
         blockInfo = blockchain.getNextBlock();
-        block = Block.fromBlockInfo(blockInfo, `${process.env.WALLET_PUBLIC_KEY}`);
-        block.mine(blockchain.getDifficulty());
+        block = Block.fromBlockInfo(blockInfo);
+        block.mine(blockchain.getDifficulty(), wallet.publicKey!);
     });
 
     it("Should construct a block", () => {
@@ -75,7 +75,7 @@ describe("Block tests", () => {
     })
 
     it("should be NOT valid (hash prefix)", () => {
-        block.mine(blockchain.getDifficulty() - 1);
+        block.mine(blockchain.getDifficulty() - 1, wallet.publicKey!);
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
@@ -84,7 +84,7 @@ describe("Block tests", () => {
     })
 
     it("should be NOT valid (previousHash)", () => {
-        block.mine(blockchain.getDifficulty());
+        block.mine(blockchain.getDifficulty(), wallet.publicKey!);
         block.previousHash = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
@@ -104,7 +104,7 @@ describe("Block tests", () => {
     })
     it("should be NOT valid (transactions)", () => {
         block.timestamp = Date.now();
-        block.transactions[0].toAddress = "";
+        block.transactions[0].hash = "";
         const validation = block.isValid(
             blockchain.getLastBlock().index,
             blockchain.getLastBlock().hash,
@@ -112,7 +112,7 @@ describe("Block tests", () => {
         expect(validation.success).toEqual(false);
     })
     it("should be NOT valid (transaction type = fee)", () => {
-        block.transactions[0].toAddress = wallet.publicKey;
+        block.transactions[0].hash = block.transactions[0].generateHash();
         block.transactions[1].type = TransactionType.FEE;
 
         const validation = block.isValid(
@@ -132,6 +132,6 @@ describe("Block tests", () => {
     })
     it("should provide a Block from block info", () => {
         const blockInfo: BlockInfo = blockchain.getNextBlock();
-        expect(Block.fromBlockInfo(blockInfo, wallet.publicKey!)).toBeInstanceOf(Block);
+        expect(Block.fromBlockInfo(blockInfo)).toBeInstanceOf(Block);
     })
 })

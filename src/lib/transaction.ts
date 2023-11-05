@@ -26,10 +26,18 @@ export default class Transaction {
             tx.txOutputs.map(txo => new TransactionOutput(txo))
             : [] as TransactionOutput[];
         this.hash = tx?.hash || this.generateHash();
-        //update txos hash
+        this.updateTxoHash();
+    }
+
+    /**
+     * Updates each transaction output with the transaction reference hash
+     */
+    updateTxoHash(): void {
         //this.txOutputs.forEach((txo, index, arr) => { arr[index].txHash = this.hash });
-        //this.txOutputs.forEach((txo) => { txo.txHash = this.hash });
-        this.txOutputs.forEach(txo => txo.txHash = this.hash);
+        if (this.txOutputs.length) {
+            this.txOutputs.forEach((txo) => { txo.currTxHash = this.hash });
+        }
+        //this.txOutputs.forEach(txo => txo.txHash = this.hash);
     }
 
     /**
@@ -92,6 +100,10 @@ export default class Transaction {
                 return new Validation(false, message);
             }
         }
+        if (this.txOutputs.some(txo => txo.currTxHash !== this.hash)) {
+            return new Validation(false, "Invalid TXO reference hash");
+        }
+        //TODO: validar as taxas e recompensas quando tx.type === FEE
         return new Validation();
     }
 }

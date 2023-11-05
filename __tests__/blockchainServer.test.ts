@@ -14,9 +14,9 @@ describe('Blockchain Server Tests', () => {
 
     let blockInfo: BlockInfo;
     let block: Block;
-    let wallet :Wallet;
+    let wallet: Wallet;
 
-    beforeAll(() => {                
+    beforeAll(() => {
         wallet = new Wallet();
     });
 
@@ -29,8 +29,7 @@ describe('Blockchain Server Tests', () => {
 
     test('POST /transactions - Should add TX', async () => {
         const tx: Transaction = new Transaction({
-            type: TransactionType.REGULAR,
-            toAddress: wallet.publicKey
+            type: TransactionType.REGULAR            
         } as Transaction);
         const response = await request(app).post('/transactions/').send(tx);
         expect(response.status).toEqual(201);
@@ -43,8 +42,8 @@ describe('Blockchain Server Tests', () => {
     })
 
     test('POST /blocks - Should add a block', async () => {
-        block = Block.fromBlockInfo(blockInfo, wallet.publicKey!);
-        block.mine(blockInfo.difficulty);
+        block = Block.fromBlockInfo(blockInfo);
+        block.mine(blockInfo.difficulty, wallet.publicKey!);
         const response = await request(app).post('/blocks/').send(block);
         expect(response.status).toEqual(201);
     })

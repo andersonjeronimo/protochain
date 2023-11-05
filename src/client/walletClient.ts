@@ -7,6 +7,7 @@ import axios from 'axios';
 import Transaction from '../lib/transaction';
 import TransactionType from '../lib/transactionType';
 import TransactionInput from '../lib/transactionInput';
+import TransactionOutput from '../lib/transactionOutput';
 
 const SERVER = process.env.SERVER;
 let myWalletPub: string | undefined;
@@ -110,33 +111,40 @@ function sendTx() {
             console.log(`Invalid wallet`);
             return preMenu("Press any key to MAIN MENU");
         }
-        rl.question(`Amount? :`, async(amountStr) => {
+        rl.question(`Amount? :`, async (amountStr) => {
             const amount = parseInt(amountStr);
             if (!amount) {
                 console.log(`Invalid amount`);
                 return preMenu("Press any key to MAIN MENU");
             }
-
             //TODO: Balance validation
             const tx = new Transaction();
             tx.timestamp = Date.now();
-            tx.toAddress = toWallet;
             tx.type = TransactionType.REGULAR;
-            tx.txInput = new TransactionInput({
+            tx.txInputs.push(new TransactionInput({
                 fromAddress: myWalletPub,
                 amount: amount,
-            } as TransactionInput);
+            } as TransactionInput));
             if (myWalletPriv) {
-                tx.txInput.sign(myWalletPriv);
+                tx.txInputs.forEach((txi) => {
+                    txi.sign(myWalletPriv!);
+                })
             }
+
             tx.generateHash();
+            
+            tx.txOutputs.push(new TransactionOutput({
+                toAddress: toWallet,
+                amount: amount,
+                currTxHash: tx.hash
+            } as TransactionOutput));
 
             try {
                 const txResponse = await axios.post(`${SERVER}transactions/`, tx);
                 console.log("Transaction accepted. Waiting miners");
                 console.log(txResponse.data);
             } catch (error: any) {
-                console.error(error.response ? error.response.data : error.message);                
+                console.error(error.response ? error.response.data : error.message);
             }
             return preMenu("Transaction send with success. Press any key to MAIN MENU");
         })

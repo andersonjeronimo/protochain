@@ -28,7 +28,7 @@ export default class Block {
         this.transactions = block?.transactions
             ? block?.transactions.map(tx => new Transaction(tx))
             : [] as Transaction[];
-        this.hash = block?.hash || this.generateHash();        
+        this.hash = block?.hash || this.generateHash();
     }
 
     /**
@@ -71,7 +71,8 @@ export default class Block {
      * 
      * @param difficulty The difficulty factor to create a block
      */
-    mine(difficulty: number) {
+    mine(difficulty: number, miner: string) {
+        this.miner = miner;
         this.hash = this.generateHash();
         const prefix = this.getPrefix(difficulty);
         if (!this.hash.startsWith(prefix)) {
@@ -111,11 +112,8 @@ export default class Block {
                 const message = "Must have only one fee transaction type per block";
                 return new Validation(false, message);
             }
-            /* if (feeTxs[0].toAddress !== this.miner) {
-                const message = "Invalid FEE TX: different from miner";
-                return new Validation(false, message);
-            } */
-            if (feeTxs[0].txOutputs![0].toAddress !== this.miner) {
+            //TODO: validar as taxas e recompensas quando tx.type === FEE
+            if (feeTxs[0].txOutputs!.some(txo => txo.toAddress !== this.miner)) {
                 const message = "Invalid FEE TX: different from miner";
                 return new Validation(false, message);
             }
@@ -138,20 +136,14 @@ export default class Block {
      * @param walletPubKey The wallet address
      * @returns The Blockinfo instance
      */
-    static fromBlockInfo(blockInfo: BlockInfo, walletPubKey: string): Block {
+    static fromBlockInfo(blockInfo: BlockInfo/* , walletPubKey: string */): Block {
         const block = new Block();
         block.index = blockInfo.index;
         block.previousHash = blockInfo.previousHash;
-        block.transactions = blockInfo.transactions.map(tx => new Transaction(tx));
-        block.miner = walletPubKey;
-        /* block.transactions.push({
-            toAddress: walletPubKey,
-            type: TransactionType.FEE
-        } as Transaction); */
-        block.transactions.push({
-            //toAddress: walletPubKey,
-            type: TransactionType.FEE
-        } as Transaction);
+        block.transactions = blockInfo.transactions.map(tx => new Transaction(tx));        
+        block.transactions = blockInfo.transactions.length > 0 ?
+            blockInfo.transactions.map(tx => new Transaction(tx)) :
+            [] as Transaction[];
         block.hash = block.generateHash();
         return block;
     }

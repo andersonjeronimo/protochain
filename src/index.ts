@@ -3,10 +3,10 @@ import BlockInfo from "./lib/blockInfo";
 import Blockchain from "./lib/blockchain";
 import Transaction from "./lib/transaction";
 import TransactionType from "./lib/transactionType";
-import Validation from "./lib/validation";
+import Wallet from "./lib/wallet";
 
-
-const blockchain: Blockchain = new Blockchain();
+const wallet = new Wallet();
+const blockchain: Blockchain = new Blockchain(wallet.publicKey!);
 
 blockchain.addTransaction(new Transaction({ type: TransactionType.FEE } as Transaction));
 blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as Transaction));
@@ -14,11 +14,11 @@ blockchain.addTransaction(new Transaction({ type: TransactionType.REGULAR } as T
 
 const blockInfo1: BlockInfo = blockchain.getNextBlock();
 
-const block1: Block = Block.fromBlockInfo(blockInfo1, `${process.env.WALLET_PUBLIC_KEY}`);
+const block1: Block = Block.fromBlockInfo(blockInfo1);
 
 //block1.transactions.push(new Transaction({ type: TransactionType.REGULAR, data: new Date().toString(), hash: "later" } as Transaction));
 //block1.transactions.pop();
-block1.mine(1);
+block1.mine(1, wallet.publicKey!);
 
 const validation1 = blockchain.addBlock(block1);
 

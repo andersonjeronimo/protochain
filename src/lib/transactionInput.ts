@@ -16,6 +16,7 @@ const encoding = "hex";
 export default class TransactionInput {
     fromAddress: string | undefined;
     amount: number;
+    prevTxHash: string | undefined;
     signature: string | undefined;
     hash: string | undefined;
     /**
@@ -25,6 +26,7 @@ export default class TransactionInput {
     constructor(txInput?: TransactionInput) {
         this.fromAddress = txInput?.fromAddress || undefined;
         this.amount = txInput?.amount || 0;
+        this.prevTxHash = txInput?.prevTxHash || undefined;
         this.signature = txInput?.signature || undefined;
         this.hash = this.getHash();
     }
@@ -45,8 +47,8 @@ export default class TransactionInput {
      * @returns The TXI hash
      */
     getHash() {
-        if (this.fromAddress && this.amount) {
-            return SHA256(this.fromAddress + this.amount).toString();
+        if (this.fromAddress && this.amount && this.prevTxHash) {
+            return SHA256(this.fromAddress + this.amount + this.prevTxHash).toString();
         }
         return undefined;
     }
@@ -61,11 +63,14 @@ export default class TransactionInput {
         if (this.amount < 1) {
             return new Validation(false, "Amount must be greater than zero");
         }
+        if (!this.prevTxHash) {
+            return new Validation(false, "Must have previous tx hash");
+        }
         if (!this.hash) {
             return new Validation(false, "Cannot generate hash: fromAddress or/and amount undefined");
         }
         if (!this.signature) {
-            return new Validation(false, "Cannot sign this input: fromAddress or/and amount undefined");
+            return new Validation(false, "Cannot sign this input: invalid / empty fields");
         }
         const hashBuffer: Buffer = Buffer.from(this.hash, encoding);
         const publicKeyBuffer: Buffer = Buffer.from(this.fromAddress, encoding);

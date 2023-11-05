@@ -1,6 +1,7 @@
 import Block from "./block";
 import BlockInfo from "./blockInfo";
 import Transaction from "./transaction";
+import TransactionOutput from "./transactionOutput";
 import TransactionType from "./transactionType";
 import Validation from "./validation";
 /**
@@ -18,21 +19,38 @@ export default class Blockchain {
     /**
      * Creates a new blockchain
      */
-    constructor() {
+    constructor(miner: string) {
         this.mempool = [] as Transaction[]; //São obtidas nas wallets
         this.blockInfoCache = [] as BlockInfo[];
-        this.blocks = [new Block({
-            index: this.nextIndex,
-            hash: "Genesis Hash",
-            previousHash: "Genesis",
-            transactions: [
-                new Transaction({
-                    type: TransactionType.FEE
-                } as Transaction)
-            ] as Transaction[],
-            timestamp: Date.now()
-        } as Block)];
+        this.blocks = [] as Block[];
+        const genesis = this.genesisBlock(miner);
+        this.blocks.push(genesis);
         this.nextIndex++;
+    }
+    /**
+     * 
+     * @param miner Blockchain node that will mine the block
+     * @returns Mined genesis block
+     */
+    genesisBlock(miner: string): Block {
+        const amount = 10;//TODO: calcular a recompensa
+        const tx = new Transaction({
+            type: TransactionType.COINBASE,
+            txOutputs: [new TransactionOutput({
+                amount: amount,
+                toAddress: miner,
+            } as TransactionOutput)]
+        } as Transaction);
+        tx.hash = tx.generateHash();
+        tx.txOutputs.forEach(txo => txo.currTxHash = tx.hash);
+        const block = new Block({
+            index: this.nextIndex,
+            previousHash: "Genesis",
+            transactions: [new Transaction(tx)]
+        } as Block);
+        block.hash = block.generateHash();
+        block.mine(this.getDifficulty(), miner);
+        return block;
     }
 
     /**
@@ -49,18 +67,19 @@ export default class Blockchain {
      * @param block Block to be added to the blockchain
      * @returns Returns void
      */
-    addBlock(block: Block): Validation {
-        const validation = block.isValid(
-            this.getLastBlock().index,
-            this.getLastBlock().hash!,
-            this.getDifficulty()
-        );        
-        if (!validation.success) return validation;        
-
+    addBlock(block: Block) {
         //Verificar se blockinfo já foi processado por outro minerador e excluído da lista 
         if (this.blockInfoCache.length === 0) {
             return new Validation(false, `Block # ${block.index} already accepted from another miner`);
         }
+
+        const validation = block.isValid(
+            this.getLastBlock().index,
+            this.getLastBlock().hash!,
+            this.getDifficulty()
+        );
+        if (!validation.success) return validation;
+
         const sentBlockInfo: BlockInfo = this.blockInfoCache[0];
 
         //Transações enviadas pela blockchain para mineradores
@@ -114,7 +133,10 @@ export default class Blockchain {
      * @param index Index of the blockinfo to be removed
      */
     filterblockInfoCache(index: number) {
-        this.blockInfoCache = [] as BlockInfo[];
+        //this.blockInfoCache = [] as BlockInfo[];
+        this.blockInfoCache = this.blockInfoCache.filter(info => {
+            info.index !== index;
+        })
     }
 
     /**
@@ -127,6 +149,7 @@ export default class Blockchain {
         if (!validation.success) {
             return new Validation(false, `Invalid transaction: ${validation.message}`);
         }
+        //TODO: avaliar a origem dos fundos (UTXO)
         this.mempool.push(new Transaction(transaction));
         return new Validation(true, transaction.hash);
     }
@@ -160,7 +183,7 @@ export default class Blockchain {
         const previousHash = this.getLastBlock().hash;
         const difficulty = this.getDifficulty();
         const maxDifficulty = Blockchain.MAX_DIFFICULTY_FACTOR;
-        const feePerTx = 1;        
+        const feePerTx = 1;
         const mempoolTxs = this.mempool.length > 0 ?
             this.mempool.slice(0, Blockchain.TX_PER_BLOCK) as Transaction[] :
             [] as Transaction[];
@@ -171,13 +194,13 @@ export default class Blockchain {
             maxDifficulty,
             feePerTx,
             transactions: mempoolTxs.length > 0 ? mempoolTxs.map(tx => new Transaction(tx)) :
-                mempoolTxs
+                [] as Transaction[]
         } as BlockInfo;
         /**
          * Armazena o blockInfo para comparar posteriormente se houve alteração
          * das transações através dos 'hashes'.
          */
-        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {            
+        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {
             this.blockInfoCache.push(blockInfo);
         }
         return blockInfo;
