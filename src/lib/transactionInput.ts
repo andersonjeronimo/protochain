@@ -42,7 +42,7 @@ export default class TransactionInput {
     }
     /**
      * 
-     * @returns 
+     * @returns The TXI hash
      */
     getHash() {
         if (this.fromAddress && this.amount) {

@@ -28,26 +28,26 @@ export default class Block {
         this.transactions = block?.transactions
             ? block?.transactions.map(tx => new Transaction(tx))
             : [] as Transaction[];
-        this.hash = block?.hash || this.generateHash();
+        this.hash = block?.hash || this.generateHash();        
     }
 
     /**
      * 
      * @returns A string of all transactions hashes concatenation
      */
-    generateTxHashBase(): string {
-        let txHashBase = "";
+    generateTxsHashBase(): string {
+        let txsHashBase = "";
         if (this.transactions.length > 0) {
-            this.transactions.map(tx => txHashBase = txHashBase.concat(tx.hash))
+            this.transactions.map(tx => txsHashBase = txsHashBase.concat(tx.hash))
         }
-        return txHashBase;
+        return txsHashBase;
     }
 
     /**
      * @returns Generates the SHA256 block hash
      */
     generateHash(): string {
-        let hashBase: string = this.generateTxHashBase();
+        let hashBase: string = this.generateTxsHashBase();
         Object.entries(this).forEach(
             ([key, value]) => {
                 if (key.toString() !== 'hash' || key.toString() !== 'transactions') {
@@ -111,7 +111,11 @@ export default class Block {
                 const message = "Must have only one fee transaction type per block";
                 return new Validation(false, message);
             }
-            if (feeTxs[0].toAddress !== this.miner) {
+            /* if (feeTxs[0].toAddress !== this.miner) {
+                const message = "Invalid FEE TX: different from miner";
+                return new Validation(false, message);
+            } */
+            if (feeTxs[0].txOutputs![0].toAddress !== this.miner) {
                 const message = "Invalid FEE TX: different from miner";
                 return new Validation(false, message);
             }
@@ -140,8 +144,12 @@ export default class Block {
         block.previousHash = blockInfo.previousHash;
         block.transactions = blockInfo.transactions.map(tx => new Transaction(tx));
         block.miner = walletPubKey;
-        block.transactions.push({
+        /* block.transactions.push({
             toAddress: walletPubKey,
+            type: TransactionType.FEE
+        } as Transaction); */
+        block.transactions.push({
+            //toAddress: walletPubKey,
             type: TransactionType.FEE
         } as Transaction);
         block.hash = block.generateHash();
