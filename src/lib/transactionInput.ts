@@ -56,7 +56,7 @@ export default class TransactionInput {
      * 
      * @returns 
      */
-    isValid(): Validation {        
+    isValid(): Validation {
         if (!this.fromAddress) {
             return new Validation(false, "from wallet address is required");
         }
@@ -76,11 +76,9 @@ export default class TransactionInput {
         const publicKeyBuffer: Buffer = Buffer.from(this.fromAddress, encoding);
         const keyPair: ECPairInterface = ECPair.fromPublicKey(publicKeyBuffer);
         const signatureBuffer: Buffer = Buffer.from(this.signature, encoding);
-        
+
         const isValid = keyPair.verify(hashBuffer, signatureBuffer);
         return isValid ? new Validation() : new Validation(false, "Invalid tx input");
     }
-
-
 
 }

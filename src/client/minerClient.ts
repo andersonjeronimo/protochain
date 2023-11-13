@@ -5,6 +5,9 @@ import axios from 'axios';
 import BlockInfo from '../lib/blockInfo';
 import Block from '../lib/block';
 import Wallet from '../lib/wallet';
+import Transaction from '../lib/transaction';
+import TransactionType from '../lib/transactionType';
+import TransactionOutput from '../lib/transactionOutput';
 
 const miner = new Wallet();
 
@@ -17,14 +20,29 @@ async function mine() {
             mine();
         }, 10000);
     }
-    const blockInfo = data as BlockInfo;    
-    const newBlock = Block.fromBlockInfo(blockInfo);    
+    const blockInfo = data as BlockInfo;
+    const newBlock = Block.fromBlockInfo(blockInfo);
+
+    const txo = new TransactionOutput({
+        toAddress: miner.publicKey,
+        amount: 10,
+    } as TransactionOutput);
+
+    const tx = new Transaction({
+        type: TransactionType.FEE
+    } as Transaction);
+
+    tx.txOutputs.push(txo);
+    tx.hash = tx.generateHash();
+    tx.updateTxoHash();
+
+    newBlock.transactions.push(tx);
 
     console.log(`Iniciando mineração do bloco # ${newBlock.index}...`);
     console.log(`Dificuldade atual da rede: ${blockInfo.difficulty}`);
-    
+
     newBlock.mine(blockInfo.difficulty, miner.publicKey!);
-    
+
     console.log(`Bloco ${newBlock.hash} minerado com sucesso.`);
     try {
         await axios.post(`${process.env.SERVER}blocks/`, newBlock);
@@ -40,4 +58,3 @@ async function mine() {
 }
 
 mine();
-

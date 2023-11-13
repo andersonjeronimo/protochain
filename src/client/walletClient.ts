@@ -10,6 +10,8 @@ import TransactionInput from '../lib/transactionInput';
 import TransactionOutput from '../lib/transactionOutput';
 
 const SERVER = process.env.SERVER;
+const BTC_SIGN_UNICODE = '\u{20BF}';
+const BTC = `${BTC_SIGN_UNICODE}TC`;
 let myWalletPub: string | undefined;
 let myWalletPriv: string | undefined;
 
@@ -89,9 +91,17 @@ function preMenu(message: string) {
     });
 }
 
-function getBalance() {
+async function getBalance() {
     console.clear();
-    console.log("Not implemented yet");
+    if (!myWalletPub) {
+        console.log("Not logged or don't have a wallet yet");
+        return preMenu("Press any key to MAIN MENU");
+    }
+
+    const walletResp = await axios.get(`${SERVER}wallets/${myWalletPub}`);
+    const balance = walletResp.data.balance as number;
+    console.log(`Your current balance is ${balance} ${BTC}`);
+
     return preMenu("Press any key to MAIN MENU");
 }
 
@@ -117,27 +127,26 @@ function sendTx() {
                 console.log(`Invalid amount`);
                 return preMenu("Press any key to MAIN MENU");
             }
-            //TODO: Balance validation
-            const tx = new Transaction();
-            tx.timestamp = Date.now();
-            tx.type = TransactionType.REGULAR;
-            tx.txInputs.push(new TransactionInput({
-                fromAddress: myWalletPub,
-                amount: amount,
-            } as TransactionInput));
-            if (myWalletPriv) {
-                tx.txInputs.forEach((txi) => {
-                    txi.sign(myWalletPriv!);
-                })
-            }
 
-            tx.generateHash();
+            const walletResp = await axios.get(`${SERVER}wallets/${myWalletPub}`);
+            const balance = walletResp.data.balance as number;
+            const fee = walletResp.data.fee as number;
+            const utxo = walletResp.data.utxo as TransactionOutput[];
+
+            if (balance < amount + fee) {
+                console.log(`Insufficient balance`);
+                return preMenu("Press any key to MAIN MENU");
+            }          
+
+            //TODO: Balance validation
+            //https://www.oreilly.com/library/view/mastering-bitcoin/9781491902639/ch05.html
+            let tx = Transaction.fromUtxo(utxo, myWalletPub!, toWallet, amount);            
             
-            tx.txOutputs.push(new TransactionOutput({
-                toAddress: toWallet,
-                amount: amount,
-                currTxHash: tx.hash
-            } as TransactionOutput));
+            tx.signAllTxi(myWalletPriv!);
+
+            tx.hash = tx.generateHash();
+            tx.updateTxoHash();
+            //TODO: Gerar Tx type FEE
 
             try {
                 const txResponse = await axios.post(`${SERVER}transactions/`, tx);

@@ -42,6 +42,16 @@ export default class Transaction {
 
     /**
      * 
+     * @param privateKey Wallet private key from who is sending funds
+     */
+    signAllTxi(privateKey: string) {
+        if (this.txInputs.length) {
+            this.txInputs.forEach((txi) => { txi.sign(privateKey) });
+        }
+    }
+
+    /**
+     * 
      * @returns A string of all transactions hashes concatenation
      */
     generateTxHashBase(): string {
@@ -105,5 +115,60 @@ export default class Transaction {
         }
         //TODO: validar as taxas e recompensas quando tx.type === FEE
         return new Validation();
+    }
+
+
+    static fromUtxo(utxos: TransactionOutput[], fromWallet: string, toWallet: string, amount: number): Transaction {
+        let tx = new Transaction({
+            type: TransactionType.REGULAR
+        } as Transaction);
+
+        let debit = amount;
+        let change = 0;
+        let index = 0;
+        do {
+            const txo = utxos[index];
+            const payment = txo.amount;
+            if (payment <= debit) {
+                tx.txInputs.push(new TransactionInput({
+                    amount: payment,
+                    fromAddress: fromWallet,
+                    prevTxHash: txo.currTxHash
+                } as TransactionInput));
+                tx.txOutputs.push(new TransactionOutput({
+                    amount: payment,
+                    toAddress: toWallet,                    
+                } as TransactionOutput));           
+                
+                debit = (debit - payment);
+            }
+            if (payment > debit) {
+                change = payment - debit;
+                tx.txInputs.push(new TransactionInput({
+                    amount: debit,
+                    fromAddress: fromWallet,
+                    prevTxHash: txo.currTxHash
+                } as TransactionInput));
+                tx.txOutputs.push(new TransactionOutput({
+                    amount: debit,
+                    toAddress: toWallet,                   
+                } as TransactionOutput));
+                //CHANGE
+                tx.txInputs.push(new TransactionInput({
+                    amount: change,
+                    fromAddress: fromWallet,
+                    prevTxHash: txo.currTxHash
+                } as TransactionInput));
+                tx.txOutputs.push(new TransactionOutput({
+                    amount: change,
+                    toAddress: fromWallet,   
+                } as TransactionOutput));
+                
+                debit = 0;
+            }
+            index++;
+        } while (debit > 0);
+
+        return tx;
     }
 }

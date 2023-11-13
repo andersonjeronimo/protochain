@@ -10,8 +10,7 @@ import Wallet from '../src/lib/wallet';
 
 //jest.mock('../src/lib/block');
 
-describe('Blockchain Server Tests', () => {
-
+describe('Blockchain Server Tests', () => {    
     let blockInfo: BlockInfo;
     let block: Block;
     let wallet: Wallet;
@@ -42,10 +41,12 @@ describe('Blockchain Server Tests', () => {
     })
 
     test('POST /blocks - Should add a block', async () => {
+        const response1 = await request(app).get('/blocks/next');
+        blockInfo = response1.body as BlockInfo;
         block = Block.fromBlockInfo(blockInfo);
         block.mine(blockInfo.difficulty, wallet.publicKey!);
-        const response = await request(app).post('/blocks/').send(block);
-        expect(response.status).toEqual(201);
+        const response2 = await request(app).post('/blocks/').send(block);
+        expect(response2.status).toEqual(201);
     })
 
     test('GET /:hash - Should get a block', async () => {

@@ -1,6 +1,7 @@
 import Block from "./block";
 import BlockInfo from "./blockInfo";
 import Transaction from "./transaction";
+import TransactionInput from "./transactionInput";
 import TransactionOutput from "./transactionOutput";
 import TransactionType from "./transactionType";
 import Validation from "./validation";
@@ -33,9 +34,9 @@ export default class Blockchain {
      * @returns Mined genesis block
      */
     genesisBlock(miner: string): Block {
-        const amount = 10;//TODO: calcular a recompensa
+        const amount = 100;//TODO: calcular a recompensa
         const tx = new Transaction({
-            type: TransactionType.COINBASE,
+            type: TransactionType.FEE,
             txOutputs: [new TransactionOutput({
                 amount: amount,
                 toAddress: miner,
@@ -62,12 +63,16 @@ export default class Blockchain {
             1 : Math.ceil(this.blocks.length / Blockchain.DIFFICULTY_FACTOR);
     }
 
+    getFeePerTx(): number {
+        return 1;
+    }
+
     /**
      * 
      * @param block Block to be added to the blockchain
      * @returns Returns void
      */
-    addBlock(block: Block) {
+    addBlock(block: Block): Validation {
         //Verificar se blockinfo já foi processado por outro minerador e excluído da lista 
         if (this.blockInfoCache.length === 0) {
             return new Validation(false, `Block # ${block.index} already accepted from another miner`);
@@ -144,7 +149,18 @@ export default class Blockchain {
      * @param transaction To be included
      * @returns Validation success true | false
      */
-    addTransaction(transaction: Transaction) {
+    addTransaction(transaction: Transaction): Validation {
+        if (transaction.txInputs && transaction.txInputs.length) {
+            const fromAddress = transaction.txInputs[0].fromAddress;
+            const pendingTx = this.mempool
+                .map(tx => tx.txInputs)
+                .flat()
+                .filter(txi => txi.fromAddress === fromAddress);
+            if (pendingTx && pendingTx.length) {
+                return new Validation(false, "This wallet has a pending transaction");
+            }
+
+        }
         const validation = transaction.isValid();
         if (!validation.success) {
             return new Validation(false, `Invalid transaction: ${validation.message}`);
@@ -200,10 +216,54 @@ export default class Blockchain {
          * Armazena o blockInfo para comparar posteriormente se houve alteração
          * das transações através dos 'hashes'.
          */
-        if (blockInfo.transactions.length > 0 && this.blockInfoCache.length === 0) {
+        if (/* blockInfo.transactions.length > 0 &&  */this.blockInfoCache.length === 0) {
             this.blockInfoCache.push(blockInfo);
         }
         return blockInfo;
+    }
+
+    /**
+     * https://river.com/learn/terms/u/unspent-transaction-output-utxo/
+     * @param wallet The public key of the wallet
+     * @returns Todas as TX outputs DESTINADAS a carteira cujo campo 'currentTxHash' não seja referenciado 
+     * @returns no campo 'previousTxHash' de nenhuma TX input EMITIDA pela carteira,
+     * @returns indicando que possuem o status 'UNSPENT' (UTXO)
+     * 
+     */
+    getUtxo(wallet: string): TransactionOutput[] {
+        let txs: Transaction[];
+        let txis: TransactionInput[];
+        let txos: TransactionOutput[];
+        let utxos: TransactionOutput[];
+        txs = this.blocks.map(b => b.transactions).flat();
+        txos = txs.map(tx => tx.txOutputs).flat().filter(txo => {
+            txo.toAddress === wallet;
+        });
+        txis = txs.map(tx => tx.txInputs).flat().filter(txi => {
+            txi.fromAddress === wallet;
+        });
+        txis.forEach((txi, index, arr) => {
+            let prevTxHash = arr[index].prevTxHash;
+            txos.forEach((txo, index, arr) => {
+                if (arr[index].currTxHash === prevTxHash) {
+                    txos.splice(index, 1);
+                }
+            })
+        })
+        utxos = txos;
+        return utxos;
+    }
+    
+    /**
+     * 
+     * @param wallet The public key of the wallet
+     * @returns The current balance from the wallet (all UTXO.amount sum)
+     */
+    getBalance(wallet: string): number {
+        const utxo = this.getUtxo(wallet);
+        const amounts = utxo.map(txo => txo.amount);
+        const balance = amounts.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        return balance;
     }
 
     /**

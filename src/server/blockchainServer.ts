@@ -9,6 +9,7 @@ import Block from '../lib/block';
 import Transaction from '../lib/transaction';
 import BlockInfo from '../lib/blockInfo';
 import Wallet from '../lib/wallet';
+import TransactionOutput from '../lib/transactionOutput';
 
 /* c8 ignore next */
 const PORT: number = parseInt(`${process.env.PORT || 3000}`);
@@ -53,17 +54,18 @@ app.get('/transactions', (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.get('/blocks/next', (req: Request, res: Response, next: NextFunction) => {
-    const blockInfo = blockchain.getNextBlock() as BlockInfo;    
+    const blockInfo = blockchain.getNextBlock() as BlockInfo;
     return res.json(blockInfo);
 });
 
-app.post('/blocks', (req: Request, res: Response, next: NextFunction) => {    
+app.post('/blocks', (req: Request, res: Response, next: NextFunction) => {
     if (req.body.index < 0) return res.sendStatus(422);
     const block = new Block(req.body as Block);
     const validation = blockchain.addBlock(block);
+    console.log(validation.message);
     if (validation.success) {
         return res.status(201).json(block);
-    } else {        
+    } else {
         return res.status(422).json(validation.message);
     }
 });
@@ -75,14 +77,28 @@ app.get('/blocks/:hash', (req: Request, res: Response, next: NextFunction) => {
     return res.json(block);
 });
 
-
+app.get('/wallets/:wallet', (req: Request, res: Response, next: NextFunction) => {
+    const wallet = req.params.wallet;
+    const utxo = blockchain.getUtxo(wallet);
+    const fee = blockchain.getFeePerTx();
+    if (!utxo) return res.sendStatus(404);
+    const amounts = utxo.map(txo => txo.amount);
+    const balance = amounts.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+    return res.json({
+        balance,
+        fee,
+        utxo
+    });
+});
 
 
 /**
  * For supertest
  */
 /* c8 ignore start */
-if (process.argv.includes('--run')) app.listen(PORT, () => { console.log(`Blockchain app listening on port ${PORT}`) })
+if (process.argv.includes('--run')) app.listen(PORT, () => {
+    console.log(`Blockchain app listening on port ${PORT}. Wallet: ${wallet.publicKey} `)
+})
 /* c8 ignore end */
 /**
  * For supertest
